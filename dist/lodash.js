@@ -5517,7 +5517,7 @@
   /*--------------------------------------------------------------------------*/
 
   // expose Lo-Dash
-  var _ = runInContext();
+  var _ = $._ = runInContext();
 
   // expose Lo-Dash methods to jQuery
   $.each(_, function(prop, func){
