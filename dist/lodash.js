@@ -7,7 +7,6 @@
  * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud Inc.
  * Available under MIT license <http://lodash.com/license>
  */
-;(function(window) {
 
   /** Used as a safe reference for `undefined` in pre ES5 environments */
   var undefined;
@@ -5525,5 +5524,3 @@
     if (!Object.hasOwnProperty.call(_, prop) || /VERSION/.test(name)) return;
     if (!$[prop]) $[prop] = func;
   });
-
-}(this));
