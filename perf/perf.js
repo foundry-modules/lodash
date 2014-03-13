@@ -1,16 +1,16 @@
-(function(window) {
+;(function(root) {
 
   /** Use a single "load" function */
-  var load = typeof require == 'function' ? require : window.load;
+  var load = typeof require == 'function' ? require : root.load;
 
   /** The file path of the Lo-Dash file to test */
   var filePath = (function() {
     var min = 0;
-    var result = window.phantom
+    var result = root.phantom
       ? phantom.args
-      : (window.system
+      : (root.system
           ? (min = 1, system.args)
-          : (window.process ? (min = 2, process.argv) : (window.arguments || []))
+          : (root.process ? (min = 2, process.argv) : (root.arguments || []))
         );
 
     var last = result[result.length - 1];
@@ -26,22 +26,22 @@
   }());
 
   /** Load Lo-Dash */
-  var lodash = window.lodash || (window.lodash = (
-    lodash = load(filePath) || window._,
+  var lodash = root.lodash || (root.lodash = (
+    lodash = load(filePath) || root._,
     lodash = lodash._ || lodash,
     lodash.noConflict()
   ));
 
   /** Load Benchmark.js */
-  var Benchmark = window.Benchmark || (window.Benchmark = (
-    Benchmark = load('../vendor/benchmark.js/benchmark.js') || window.Benchmark,
+  var Benchmark = root.Benchmark || (root.Benchmark = (
+    Benchmark = load('../vendor/benchmark.js/benchmark.js') || root.Benchmark,
     Benchmark = Benchmark.Benchmark || Benchmark,
-    Benchmark.runInContext(lodash.extend({}, window, { '_': lodash }))
+    Benchmark.runInContext(lodash.extend({}, root, { '_': lodash }))
   ));
 
   /** Load Underscore */
-  var _ = window._ || (window._ = (
-    _ = load('../vendor/underscore/underscore.js') || window._,
+  var _ = root._ || (root._ = (
+    _ = load('../vendor/underscore/underscore.js') || root._,
     _._ || _
   ));
 
@@ -67,25 +67,28 @@
   var toString = Object.prototype.toString;
 
   /** The `ui` object */
-  var ui = window.ui || (window.ui = {
+  var ui = root.ui || (root.ui = {
     'buildPath': basename(filePath, '.js'),
     'otherPath': 'underscore'
   });
 
   /** The Lo-Dash build basename */
-  var buildName = window.buildName = basename(ui.buildPath, '.js');
+  var buildName = root.buildName = basename(ui.buildPath, '.js');
 
   /** The other library basename */
-  var otherName = window.otherName = basename(ui.otherPath, '.js');
+  var otherName = root.otherName = (function() {
+    var result = basename(ui.otherPath, '.js');
+    return result + (result == buildName ? ' (2)' : '');
+  }());
 
   /** Detect if in a browser environment */
-  var isBrowser = isHostType(window, 'document') && isHostType(window, 'navigator');
+  var isBrowser = isHostType(root, 'document') && isHostType(root, 'navigator');
 
   /** Detect Java environment */
-  var isJava = !isBrowser && /Java/.test(toString.call(window.java));
+  var isJava = !isBrowser && /Java/.test(toString.call(root.java));
 
   /** Add `console.log()` support for Narwhal, Rhino, and RingoJS */
-  var console = window.console || (window.console = { 'log': window.print });
+  var console = root.console || (root.console = { 'log': root.print });
 
   /*--------------------------------------------------------------------------*/
 
@@ -94,9 +97,9 @@
    * it will be removed from the basename.
    *
    * @private
-   * @param {String} path The file path to inspect.
-   * @param {String} extension The extension to remove.
-   * @returns {String} Returns the basename.
+   * @param {string} path The file path to inspect.
+   * @param {string} extension The extension to remove.
+   * @returns {string} Returns the basename.
    */
   function basename(filePath, extension) {
     var result = (filePath || '').split(rePathSeparator).pop();
@@ -111,7 +114,7 @@
    *
    * @private
    * @param {Array} array The array of values.
-   * @returns {Number} The geometric mean.
+   * @returns {number} The geometric mean.
    */
   function getGeometricMean(array) {
     return Math.pow(Math.E, lodash.reduce(array, function(sum, x) {
@@ -125,7 +128,7 @@
    *
    * @private
    * @param {Object} bench The benchmark object.
-   * @returns {Number} Returns the adjusted Hz.
+   * @returns {number} Returns the adjusted Hz.
    */
   function getHz(bench) {
     var result = 1 / (bench.stats.mean + bench.stats.moe);
@@ -138,9 +141,9 @@
    * types of "object", "function", or "unknown".
    *
    * @private
-   * @param {Mixed} object The owner of the property.
-   * @param {String} property The property to check.
-   * @returns {Boolean} Returns `true` if the property value is a non-primitive, else `false`.
+   * @param {*} object The owner of the property.
+   * @param {string} property The property to check.
+   * @returns {boolean} Returns `true` if the property value is a non-primitive, else `false`.
    */
   function isHostType(object, property) {
     if (object == null) {
@@ -154,7 +157,7 @@
    * Logs text to the console.
    *
    * @private
-   * @param {String} text The text to log.
+   * @param {string} text The text to log.
    */
   function log(text) {
     console.log(text + '');
@@ -170,7 +173,7 @@
    * @private (@public in the browser)
    */
   function run() {
-    fbPanel = (fbPanel = window.document && document.getElementById('FirebugUI')) &&
+    fbPanel = (fbPanel = root.document && document.getElementById('FirebugUI')) &&
       (fbPanel = (fbPanel = fbPanel.contentWindow || fbPanel.contentDocument).document || fbPanel) &&
       fbPanel.getElementById('fbPanel1');
 
@@ -254,8 +257,8 @@
   lodash.extend(Benchmark.options, {
     'async': true,
     'setup': '\
-      var _ = window._,\
-          lodash = window.lodash,\
+      var _ = global._,\
+          lodash = global.lodash,\
           belt = this.name == buildName ? lodash : _;\
       \
       var index,\
@@ -267,6 +270,7 @@
           numbers = Array(limit),\
           fourNumbers = [5, 25, 10, 30],\
           nestedNumbers = [1, [2], [3, [[4]]]],\
+          nestedObjects = [{}, [{}], [{}, [[{}]]]],\
           twoNumbers = [12, 23];\
       \
       for (index = 0; index < limit; index++) {\
@@ -276,18 +280,24 @@
       }\
       \
       if (typeof bind != "undefined") {\
-        var thisArg = { "name": "moe" },\
-            ctor = function() {};\
+        var thisArg = { "name": "fred" };\
         \
         var func = function(greeting, punctuation) {\
-          return greeting + ", " + this.name + (punctuation || ".");\
+          return greeting + " " + this.name + (punctuation || ".");\
         };\
         \
         var _boundNormal = _.bind(func, thisArg),\
+            _boundMultiple = _boundNormal,\
             _boundPartial = _.bind(func, thisArg, "hi");\
         \
         var lodashBoundNormal = lodash.bind(func, thisArg),\
+            lodashBoundMultiple = lodashBoundNormal,\
             lodashBoundPartial = lodash.bind(func, thisArg, "hi");\
+        \
+        for (index = 0; index < 10; index++) {\
+          _boundMultiple = _.bind(_boundMultiple, { "name": "fred" + index });\
+          lodashBoundMultiple = lodash.bind(lodashBoundMultiple, { "name": "fred" + index });\
+        }\
       }\
       \
       if (typeof bindAll != "undefined") {\
@@ -472,6 +482,15 @@
         }\
       }\
       \
+      if (typeof partial != "undefined") {\
+        var func = function(greeting, punctuation) {\
+          return greeting + " fred" + (punctuation || ".");\
+        };\
+        \
+        var _partial = _.partial(func, "hi"),\
+            lodashPartial = lodash.partial(func, "hi");\
+      }\
+      \
       if (typeof template != "undefined") {\
         var tplData = {\
           "header1": "Header1",\
@@ -526,9 +545,20 @@
             lodashFindWhere = lodash.findWhere || lodash.find,\
             whereObject = { "num": 9 };\
       }\
+      if (typeof wrap != "undefined") {\
+        var add = function(a, b) {\
+          return a + b;\
+        };\
+        \
+        var average = function(func, a, b) {\
+          return (func(a, b) / 2).toFixed(2);\
+        };\
+        \
+        var _wrapped = _.wrap(add, average);\
+            lodashWrapped = lodash.wrap(add, average);\
+      }\
       if (typeof zip != "undefined") {\
-        var unzipped = [["a", "b", "c"], [1, 2, 3], [true, false, true]],\
-            zipped = [["a", 1, true], ["b", 2, false], ["c", 3, true]];\
+        var unzipped = [["a", "b", "c"], [1, 2, 3], [true, false, true]];\
       }'
   });
 
@@ -582,25 +612,13 @@
   /*--------------------------------------------------------------------------*/
 
   suites.push(
-    Benchmark.Suite('`_.bind` (uses native `Function#bind` if available and inferred fast)')
+    Benchmark.Suite('`_.bind`')
       .add(buildName, {
-        'fn': 'lodash.bind(func, { "name": "moe" }, "hi")',
+        'fn': 'lodash.bind(func, { "name": "fred" })',
         'teardown': 'function bind(){}'
       })
       .add(otherName, {
-        'fn': '_.bind(func, { "name": "moe" }, "hi")',
-        'teardown': 'function bind(){}'
-      })
-  );
-
-  suites.push(
-    Benchmark.Suite('bound call')
-      .add(buildName, {
-        'fn': 'lodashBoundNormal()',
-        'teardown': 'function bind(){}'
-      })
-      .add(otherName, {
-        'fn': '_boundNormal()',
+        'fn': '_.bind(func, { "name": "fred" })',
         'teardown': 'function bind(){}'
       })
   );
@@ -618,25 +636,25 @@
   );
 
   suites.push(
-    Benchmark.Suite('bound and partially applied call (uses native `Function#bind` if available)')
-      .add(buildName, {
-        'fn': 'lodashBoundPartial()',
-        'teardown': 'function bind(){}'
-      })
-      .add(otherName, {
-        'fn': '_boundPartial()',
-        'teardown': 'function bind(){}'
-      })
-  );
-
-  suites.push(
-    Benchmark.Suite('bound and partially applied call with arguments (uses native `Function#bind` if available)')
+    Benchmark.Suite('bound and partially applied call with arguments')
       .add(buildName, {
         'fn': 'lodashBoundPartial("!")',
         'teardown': 'function bind(){}'
       })
       .add(otherName, {
         'fn': '_boundPartial("!")',
+        'teardown': 'function bind(){}'
+      })
+  );
+
+  suites.push(
+    Benchmark.Suite('bound multiple times')
+      .add(buildName, {
+        'fn': 'lodashBoundMultiple()',
+        'teardown': 'function bind(){}'
+      })
+      .add(otherName, {
+        'fn': '_boundMultiple()',
         'teardown': 'function bind(){}'
       })
   );
@@ -698,20 +716,20 @@
   suites.push(
     Benchmark.Suite('`_.contains` iterating an array')
       .add(buildName, '\
-        lodash.contains(numbers, 19)'
+        lodash.contains(numbers, limit - 1)'
       )
       .add(otherName, '\
-        _.contains(numbers, 19)'
+        _.contains(numbers, limit - 1)'
       )
   );
 
   suites.push(
     Benchmark.Suite('`_.contains` iterating an object')
       .add(buildName, '\
-        lodash.contains(object, 19)'
+        lodash.contains(object, limit - 1)'
       )
       .add(otherName, '\
-        _.contains(object, 19)'
+        _.contains(object, limit - 1)'
       )
   );
 
@@ -953,12 +971,12 @@
     Benchmark.Suite('`_.find` iterating an array')
       .add(buildName, '\
         lodash.find(numbers, function(num) {\
-          return num === 19;\
+          return num === (limit - 1);\
         })'
       )
       .add(otherName, '\
         _.find(numbers, function(num) {\
-          return num === 19;\
+          return num === (limit - 1);\
         })'
       )
   );
@@ -1001,6 +1019,16 @@
       )
       .add(otherName, '\
         _.flatten(nestedNumbers)'
+      )
+  );
+
+  suites.push(
+    Benchmark.Suite('`_.flatten` with objects')
+      .add(buildName, '\
+        lodash.flatten(nestedObjects)'
+      )
+      .add(otherName, '\
+        _.flatten(nestedObjects)'
       )
   );
 
@@ -1058,6 +1086,42 @@
       })
       .add(otherName, {
         'fn': '_.groupBy(wordToNumber, function(num) { return num >> 1; })',
+        'teardown': 'function countBy(){}'
+      })
+  );
+
+  /*--------------------------------------------------------------------------*/
+
+  suites.push(
+    Benchmark.Suite('`_.indexBy` with `callback` iterating an array')
+      .add(buildName, '\
+        lodash.indexBy(numbers, function(num) { return num >> 1; })'
+      )
+      .add(otherName, '\
+        _.indexBy(numbers, function(num) { return num >> 1; })'
+      )
+  );
+
+  suites.push(
+    Benchmark.Suite('`_.indexBy` with `property` name iterating an array')
+      .add(buildName, {
+        'fn': 'lodash.indexBy(words, "length")',
+        'teardown': 'function countBy(){}'
+      })
+      .add(otherName, {
+        'fn': '_.indexBy(words, "length")',
+        'teardown': 'function countBy(){}'
+      })
+  );
+
+  suites.push(
+    Benchmark.Suite('`_.indexBy` with `callback` iterating an object')
+      .add(buildName, {
+        'fn': 'lodash.indexBy(wordToNumber, function(num) { return num >> 1; })',
+        'teardown': 'function countBy(){}'
+      })
+      .add(otherName, {
+        'fn': '_.indexBy(wordToNumber, function(num) { return num >> 1; })',
         'teardown': 'function countBy(){}'
       })
   );
@@ -1399,6 +1463,32 @@
   /*--------------------------------------------------------------------------*/
 
   suites.push(
+    Benchmark.Suite('`_.partial`')
+      .add(buildName, {
+        'fn': 'lodash.partial(func, "hi")',
+        'teardown': 'function partial(){}'
+      })
+      .add(otherName, {
+        'fn': '_.partial(func, "hi")',
+        'teardown': 'function partial(){}'
+      })
+  );
+
+  suites.push(
+    Benchmark.Suite('partially applied call with arguments')
+      .add(buildName, {
+        'fn': 'lodashPartial("!")',
+        'teardown': 'function partial(){}'
+      })
+      .add(otherName, {
+        'fn': '_partial("!")',
+        'teardown': 'function partial(){}'
+      })
+  );
+
+  /*--------------------------------------------------------------------------*/
+
+  suites.push(
     Benchmark.Suite('`_.pick`')
       .add(buildName, '\
         lodash.pick(object, "key6", "key13")'
@@ -1535,6 +1625,18 @@
   /*--------------------------------------------------------------------------*/
 
   suites.push(
+    Benchmark.Suite('`_.sample` with an `n`')
+      .add(buildName, '\
+        lodash.sample(numbers, limit / 2)'
+      )
+      .add(otherName, '\
+        _.sample(numbers, limit / 2)'
+      )
+  );
+
+  /*--------------------------------------------------------------------------*/
+
+  suites.push(
     Benchmark.Suite('`_.shuffle`')
       .add(buildName, '\
         lodash.shuffle(numbers)'
@@ -1562,12 +1664,12 @@
     Benchmark.Suite('`_.some` iterating an array')
       .add(buildName, '\
         lodash.some(numbers, function(num) {\
-          return num == 19;\
+          return num == (limit - 1);\
         })'
       )
       .add(otherName, '\
         _.some(numbers, function(num) {\
-          return num == 19;\
+          return num == (limit - 1);\
         })'
       )
   );
@@ -1576,12 +1678,12 @@
     Benchmark.Suite('`_.some` with `thisArg` iterating an array (slow path)')
       .add(buildName, '\
         lodash.some(objects, function(value, index) {\
-          return this["key" + index] == 19;\
+          return this["key" + index] == (limit - 1);\
         }, object)'
       )
       .add(otherName, '\
         _.some(objects, function(value, index) {\
-          return this["key" + index] == 19;\
+          return this["key" + index] == (limit - 1);\
         }, object)'
       )
   );
@@ -1590,12 +1692,12 @@
     Benchmark.Suite('`_.some` iterating an object')
       .add(buildName, '\
         lodash.some(object, function(num) {\
-          return num == 19;\
+          return num == (limit - 1);\
         })'
       )
       .add(otherName, '\
         _.some(object, function(num) {\
-          return num == 19;\
+          return num == (limit - 1);\
         })'
       )
   );
@@ -1829,20 +1931,6 @@
   /*--------------------------------------------------------------------------*/
 
   suites.push(
-    Benchmark.Suite('`_.unzip`')
-      .add(buildName, {
-        'fn': 'lodash.unzip(zipped)',
-        'teardown': 'function zip(){}'
-      })
-      .add(otherName, {
-        'fn': '_.unzip(zipped)',
-        'teardown': 'function zip(){}'
-      })
-  );
-
-  /*--------------------------------------------------------------------------*/
-
-  suites.push(
     Benchmark.Suite('`_.values`')
       .add(buildName, '\
         lodash.values(object)'
@@ -1881,6 +1969,20 @@
   /*--------------------------------------------------------------------------*/
 
   suites.push(
+    Benchmark.Suite('`_.wrap` result called')
+      .add(buildName, {
+        'fn': 'lodashWrapped(2, 5)',
+        'teardown': 'function wrap(){}'
+      })
+      .add(otherName, {
+        'fn': '_wrapped(2, 5)',
+        'teardown': 'function wrap(){}'
+      })
+  );
+
+  /*--------------------------------------------------------------------------*/
+
+  suites.push(
     Benchmark.Suite('`_.zip`')
       .add(buildName, {
         'fn': 'lodash.zip.apply(lodash, unzipped)',
@@ -1898,8 +2000,8 @@
     log(Benchmark.platform);
   }
   // in the browser, expose `run` to be called later
-  if (window.document && !window.phantom) {
-    window.run = run;
+  if (root.document && !root.phantom) {
+    root.run = run;
   } else {
     run();
   }
