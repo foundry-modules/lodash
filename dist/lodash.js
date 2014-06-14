@@ -5568,6 +5568,15 @@
           : (cache[key] = func.apply(this, arguments));
       }
       memoized.cache = {};
+      // hack: Add ability to reset memoized values
+      memoized.reset = function() {
+        var cache = memoized.cache,
+            key = resolver ? resolver.apply(this, arguments) : keyPrefix + arguments[0];
+
+        if (hasOwnProperty.call(cache, key)) {
+          delete cache[key];
+        }
+      }
       return memoized;
     }
 
